@@ -13,15 +13,27 @@ export class AuthService {
 
   async findOrCreateUser(profile: any): Promise<any> {
     const pool = this.databaseService.getPool();
-    const { id: googleId, displayName, emails } = profile;
-    const email = emails[0].value;
+    const { id: googleId, displayName, emails, photos } = profile;
+    const email = emails?.[0]?.value;
+    const profilePictureUrl = photos?.[0]?.value;
+
+    if (!email) {
+      throw new Error('Email not found in Google profile');
+    }
 
     let userResult = await pool.query('SELECT * FROM "users" WHERE "googleId" = $1', [googleId]);
 
     if (userResult.rows.length === 0) {
+      // Create new user
       userResult = await pool.query(
-        'INSERT INTO "users" ("googleId", "email", "name", "createdAt", "updatedAt") VALUES ($1, $2, $3, NOW(), NOW()) RETURNING *',
-        [googleId, email, displayName],
+        'INSERT INTO "users" ("googleId", "email", "name", "profilePictureUrl", "createdAt", "updatedAt") VALUES ($1, $2, $3, $4, NOW(), NOW()) RETURNING *',
+        [googleId, email, displayName, profilePictureUrl],
+      );
+    } else {
+      // Update existing user's profile picture URL if it has changed
+      userResult = await pool.query(
+        'UPDATE "users" SET "profilePictureUrl" = $1, "name" = $2, "updatedAt" = NOW() WHERE "googleId" = $3 RETURNING *',
+        [profilePictureUrl, displayName, googleId],
       );
     }
 

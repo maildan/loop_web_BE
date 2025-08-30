@@ -14,12 +14,12 @@ export class AuthController {
   @Get('google/callback')
   @UseGuards(AuthGuard('google'))
   async googleAuthRedirect(@Req() req, @Res() res: Response) {
-    const user = await this.authService.findOrCreateUser(req.user);
-    const { access_token } = await this.authService.login(user);
+    // The user object is already attached to the request by the GoogleStrategy's validate function.
+    // We can use it directly to log the user in.
+    const { access_token } = await this.authService.login(req.user);
 
-    // In a real app, you might redirect to a frontend URL with the token
-    // For now, we'll just return the token
-    res.redirect(`${process.env.FRONTEND_URL}?token=${access_token}`);
+    // Redirect to the frontend with the access token.
+    res.redirect(`${process.env.FRONTEND_URL}/auth/callback?token=${access_token}`);
   }
 }
 
