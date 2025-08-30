@@ -1,7 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
-import { DatabaseService } from 'src/database/database.service';
+import { DatabaseService } from '../database/database.service';
+import { User } from '../users/entities/user.entity';
+import { Profile } from 'passport-google-oauth20';
 
 @Injectable()
 export class AuthService {
@@ -11,39 +13,36 @@ export class AuthService {
     private readonly configService: ConfigService,
   ) {}
 
-  async findOrCreateUser(profile: any): Promise<any> {
+  async findOrCreateUser(profile: Profile): Promise<User> {
     const pool = this.databaseService.getPool();
     const { id: googleId, displayName, emails, photos } = profile;
     const email = emails?.[0]?.value;
+    const name = displayName;
     const profilePictureUrl = photos?.[0]?.value;
 
     if (!email) {
       throw new Error('Email not found in Google profile');
     }
 
-    let userResult = await pool.query('SELECT * FROM "users" WHERE "googleId" = $1', [googleId]);
+    // Check if user exists
+    let userResult = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
 
     if (userResult.rows.length === 0) {
-      // 사용자가 없으면 새로 생성
+      // Create user if not exists
       userResult = await pool.query(
-        'INSERT INTO "users" ("googleId", "email", "name", "profilePictureUrl", "goal_weekly_docs", "goal_monthly_words") VALUES ($1, $2, $3, $4, 0, 0) RETURNING *',
-        [googleId, email, displayName, profilePictureUrl],
-      );
-    } else {
-      // 사용자가 있으면 이름과 프로필 사진 업데이트
-      userResult = await pool.query(
-        'UPDATE "users" SET "name" = $1, "profilePictureUrl" = $2, "updatedAt" = NOW() WHERE "googleId" = $3 RETURNING *',
-        [displayName, profilePictureUrl, googleId],
+        'INSERT INTO users (google_id, email, name, profile_picture_url) VALUES ($1, $2, $3, $4) RETURNING *',
+        [googleId, email, name, profilePictureUrl],
       );
     }
 
     return userResult.rows[0];
   }
 
-  async login(user: any) {
+  async login(user: User) {
     const payload = { email: user.email, sub: user.id };
     return {
       access_token: this.jwtService.sign(payload),
+      user,
     };
   }
 }

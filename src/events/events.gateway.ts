@@ -1,6 +1,8 @@
 import { WebSocketGateway, SubscribeMessage, MessageBody, ConnectedSocket, OnGatewayConnection, OnGatewayDisconnect } from '@nestjs/websockets';
+import { Logger } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
 import { EventsService } from './events.service';
+import { CreateEventDto } from './dto/create-event.dto';
 import { JwtService } from '@nestjs/jwt';
 
 @WebSocketGateway({
@@ -9,12 +11,13 @@ import { JwtService } from '@nestjs/jwt';
   },
 })
 export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
+  private readonly logger = new Logger(EventsGateway.name);
   constructor(
     private readonly eventsService: EventsService,
     private readonly jwtService: JwtService,
   ) {}
 
-  async handleConnection(client: Socket, ...args: any[]) {
+  async handleConnection(client: Socket) {
     try {
       const token = client.handshake.auth.token;
       if (!token) {
@@ -22,20 +25,20 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
       }
       const payload = this.jwtService.verify(token, { secret: process.env.JWT_SECRET });
       client.data.user = payload; // Attach user payload to the socket instance
-      console.log(`Client connected: ${client.id}, user: ${payload.email}`);
+      this.logger.log(`Client connected: ${client.id}, user: ${payload.email}`);
     } catch (error) {
-      console.error('Authentication error:', error.message);
+      this.logger.error('Authentication error:', error.message);
       client.disconnect();
     }
   }
 
   handleDisconnect(client: Socket) {
-    console.log(`Client disconnected: ${client.id}`);
+    this.logger.log(`Client disconnected: ${client.id}`);
   }
 
   @SubscribeMessage('events')
   async handleEvent(
-    @MessageBody() data: any,
+    @MessageBody() data: CreateEventDto,
     @ConnectedSocket() client: Socket,
   ): Promise<void> {
     const userId = client.data.user.sub;

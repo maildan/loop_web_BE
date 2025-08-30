@@ -1,4 +1,5 @@
-import { Controller, Get, Req, UseGuards } from '@nestjs/common';
+import { Controller, Get, UseGuards, Req } from '@nestjs/common';
+import type { Request } from 'express';
 import { AuthGuard } from '@nestjs/passport';
 import { EventsService } from './events.service';
 
@@ -8,7 +9,7 @@ export class EventsController {
 
   @Get()
   @UseGuards(AuthGuard('jwt'))
-  findAllForUser(@Req() req) {
+  findAllForUser(@Req() req: Request & { user: { userId: string } }) {
     // The user object is attached to the request by the JwtStrategy
     return this.eventsService.findForUser(req.user.userId);
   }
