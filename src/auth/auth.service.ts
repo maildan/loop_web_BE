@@ -26,7 +26,7 @@ export class AuthService {
     if (userResult.rows.length === 0) {
       // 사용자가 없으면 새로 생성
       userResult = await pool.query(
-        'INSERT INTO "users" ("googleId", "email", "name", "profilePictureUrl") VALUES ($1, $2, $3, $4) RETURNING *',
+        'INSERT INTO "users" ("googleId", "email", "name", "profilePictureUrl", "goal_weekly_docs", "goal_monthly_words") VALUES ($1, $2, $3, $4, 0, 0) RETURNING *',
         [googleId, email, displayName, profilePictureUrl],
       );
     } else {

@@ -17,8 +17,8 @@ export class UsersService {
 
     return {
       ...user,
-      goal_weekly_docs: user.goal_weekly_docs || 0,
-      goal_monthly_words: user.goal_monthly_words || 0,
+      goal_weekly_docs: user.goal_weekly_docs ?? 0,
+      goal_monthly_words: user.goal_monthly_words ?? 0,
     };
   }
 
