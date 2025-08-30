@@ -24,16 +24,16 @@ export class AuthService {
     let userResult = await pool.query('SELECT * FROM "users" WHERE "googleId" = $1', [googleId]);
 
     if (userResult.rows.length === 0) {
-      // Create new user
+      // 사용자가 없으면 새로 생성
       userResult = await pool.query(
-        'INSERT INTO "users" ("googleId", "email", "name", "profilePictureUrl", "createdAt", "updatedAt") VALUES ($1, $2, $3, $4, NOW(), NOW()) RETURNING *',
+        'INSERT INTO "users" ("googleId", "email", "name", "profilePictureUrl") VALUES ($1, $2, $3, $4) RETURNING *',
         [googleId, email, displayName, profilePictureUrl],
       );
     } else {
-      // Update existing user's profile picture URL if it has changed
+      // 사용자가 있으면 이름과 프로필 사진 업데이트
       userResult = await pool.query(
-        'UPDATE "users" SET "profilePictureUrl" = $1, "name" = $2, "updatedAt" = NOW() WHERE "googleId" = $3 RETURNING *',
-        [profilePictureUrl, displayName, googleId],
+        'UPDATE "users" SET "name" = $1, "profilePictureUrl" = $2, "updatedAt" = NOW() WHERE "googleId" = $3 RETURNING *',
+        [displayName, profilePictureUrl, googleId],
       );
     }
 
