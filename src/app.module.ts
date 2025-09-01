@@ -8,6 +8,7 @@ import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { DocumentsModule } from './documents/documents.module';
 import { StatsModule } from './stats/stats.module';
+import { ProjectsModule } from './projects/projects.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { StatsModule } from './stats/stats.module';
     UsersModule,
     DocumentsModule,
     StatsModule,
+    ProjectsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
